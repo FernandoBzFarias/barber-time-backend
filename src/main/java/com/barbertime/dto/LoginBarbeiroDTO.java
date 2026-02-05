@@ -1,7 +1,11 @@
 package com.barbertime.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class LoginBarbeiroDTO {
+	@NotBlank(message = "Email é obrigatório")
 	private String email;
+	  @NotBlank(message = "Senha é obrigatória")
     private String senha;
 
     public String getEmail() {

@@ -4,21 +4,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.barbertime.dto.BarbeiroRespondeDTO;
 import com.barbertime.dto.CadastroBarbeiroDTO;
 import com.barbertime.dto.LoginBarbeiroDTO;
+import com.barbertime.dto.LoginResponseDTO;
 import com.barbertime.entity.Barbeiro;
 import com.barbertime.repository.BarbeiroRepository;
+import com.barbertime.security.JwtService;
 
 @Service
 public class BarbeiroService {
 	  @Autowired
 	  private BarbeiroRepository repository;
-
-	    @Autowired
-	    private BCryptPasswordEncoder passwordEncoder;
-
+	  @Autowired
+	  private BCryptPasswordEncoder passwordEncoder; 
+	  @Autowired
+	  private JwtService jwtService;
+	  
 	    // Cadastro
-	    public Barbeiro cadastrar(CadastroBarbeiroDTO dto) {
+	    public BarbeiroRespondeDTO cadastrar(CadastroBarbeiroDTO dto) {
 
 	        if (repository.findByEmail(dto.getEmail()).isPresent()) {
 	            throw new RuntimeException("Email já cadastrado");
@@ -28,16 +32,19 @@ public class BarbeiroService {
 	        barbeiro.setNome(dto.getNome());
 	        barbeiro.setEmail(dto.getEmail());
 	        barbeiro.setTelefone(dto.getTelefone());
-
-	        // criptografando senha
 	        barbeiro.setSenha(passwordEncoder.encode(dto.getSenha()));
 
-	        return repository.save(barbeiro);
+	        Barbeiro salvo = repository.save(barbeiro);
+
+	        return new BarbeiroRespondeDTO(
+	                salvo.getId(),
+	                salvo.getNome(),
+	                salvo.getEmail(),
+	                salvo.getTelefone()
+	        );
 	    }
-
-	    // Login
-	    public Barbeiro login(LoginBarbeiroDTO dto) {
-
+	    // Login 
+	    public LoginResponseDTO login(LoginBarbeiroDTO dto) {
 	        Barbeiro barbeiro = repository.findByEmail(dto.getEmail())
 	                .orElseThrow(() -> new RuntimeException("Email ou senha inválidos"));
 
@@ -45,6 +52,8 @@ public class BarbeiroService {
 	            throw new RuntimeException("Email ou senha inválidos");
 	        }
 
-	        return barbeiro;
+	        String token = jwtService.generateToken(barbeiro.getEmail());
+
+	        return new LoginResponseDTO(token);
 	    }
 }

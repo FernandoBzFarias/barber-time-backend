@@ -1,11 +1,21 @@
 package com.barbertime.dto;
 
-public class CadastroBarbeiroDTO {
-	 private String nome;
-	 private String email;
-	 private String senha;
-	 private String telefone;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
+public class CadastroBarbeiroDTO {
+	 @NotBlank(message = "Nome é obrigatório")
+	 private String nome;
+	 @Email(message = "Email inválido")
+	 @NotBlank(message = "Email é obrigatório")
+	 private String email;
+	 @NotBlank(message = "Senha é obrigatória")
+	 @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+	 private String senha;
+	 @NotBlank(message = "Telefone é obrigatório")
+	 private String telefone;
+	 
 	 public String getNome() {
 	 return nome; }
 
