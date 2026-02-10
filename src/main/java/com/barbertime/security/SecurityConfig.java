@@ -27,6 +27,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/barbeiros/cadastro",
                     "/api/barbeiros/login",
+                    "/api/barbeiros/esqueci-senha",
+                    "/api/barbeiros/redefinir-senha",
                     "/h2-console/**"
                 ).permitAll()
                 .anyRequest().authenticated()

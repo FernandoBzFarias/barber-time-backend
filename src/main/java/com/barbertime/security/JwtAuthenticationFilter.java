@@ -31,6 +31,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getServletPath();
+
+        // Endpoints públicos que não precisam de JWT
+        if (path.equals("/api/barbeiros/login") ||
+            path.equals("/api/barbeiros/cadastro") ||
+            path.equals("/api/barbeiros/esqueci-senha") ||
+            path.equals("/api/barbeiros/redefinir-senha")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
