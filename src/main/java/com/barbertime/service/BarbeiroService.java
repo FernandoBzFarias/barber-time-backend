@@ -30,6 +30,7 @@ public class BarbeiroService {
 	  private EmailService emailService;
 	  @Autowired
 	  private BCryptPasswordEncoder passwordEncoder;
+	  
 	    // Cadastro
 	    public BarbeiroRespondeDTO cadastrar(CadastroBarbeiroDTO dto) {
 
@@ -51,7 +52,8 @@ public class BarbeiroService {
 	                salvo.getEmail(),
 	                salvo.getTelefone()
 	        );
-	    }
+	  }
+	    
 	    // Login 
 	    public LoginResponseDTO login(LoginBarbeiroDTO dto) {
 	        Barbeiro barbeiro = repository.findByEmail(dto.getEmail())
@@ -78,6 +80,8 @@ public class BarbeiroService {
 	        tokenRepository.save(resetToken);
 	        emailService.enviarEmailRecuperacao(email, token);
 	    }	 
+	    
+	    // Redefinir a senha 
 	    public void redefinirSenha(String token, String novaSenha) {
 
 	        PasswordResetToken resetToken = tokenRepository.findByToken(token)
@@ -92,7 +96,6 @@ public class BarbeiroService {
 
 	        barbeiro.setSenha(passwordEncoder.encode(novaSenha));
 	        repository.save(barbeiro);
-
 	        // Segurança: remove o token após uso
 	        tokenRepository.delete(resetToken);
 	    }

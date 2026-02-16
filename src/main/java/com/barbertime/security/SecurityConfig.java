@@ -29,9 +29,13 @@ public class SecurityConfig {
                     "/api/barbeiros/login",
                     "/api/barbeiros/esqueci-senha",
                     "/api/barbeiros/redefinir-senha",
-                    "/h2-console/**"
+                    "/h2-console/**",
+                    "/api/barbeiros",               
+                    "/api/barbeiros/disponibilidade"
                 ).permitAll()
                 .anyRequest().authenticated()
+                
+              
             )
             .addFilterBefore(jwtFilter,
                 org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)

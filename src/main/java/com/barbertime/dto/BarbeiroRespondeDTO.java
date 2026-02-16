@@ -11,8 +11,7 @@ public class BarbeiroRespondeDTO {
 	       this.id = id;
 	       this.nome = nome;
 	       this.email = email;
-	       this.telefone = telefone;
-	    }
+	       this.telefone = telefone;}
 
 	   public Long getId() { return id; }
 	   public void setId(Long id) { this.id = id; }

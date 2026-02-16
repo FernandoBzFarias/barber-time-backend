@@ -5,7 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.barbertime.entity.Barbeiro;
 
 public interface BarbeiroRepository extends JpaRepository<Barbeiro, Long>{
-
-	   Optional<Barbeiro> findByEmail(String email);
-	}
+	   Optional<Barbeiro> findByEmail(String email);}
 

@@ -6,5 +6,4 @@ import com.barbertime.entity.PasswordResetToken;
 
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
 	  Optional<PasswordResetToken> findByToken(String token);
-	  void deleteByEmail(String email);
-}
+	  void deleteByEmail(String email);}

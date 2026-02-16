@@ -5,7 +5,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.barbertime.entity.TokenRecuperacao;
 
 public interface TokenRecuperacaoRepository extends JpaRepository<TokenRecuperacao, Long> {
-
-    Optional<TokenRecuperacao> findByToken(String token);
- 
-}
+    Optional<TokenRecuperacao> findByToken(String token);}
