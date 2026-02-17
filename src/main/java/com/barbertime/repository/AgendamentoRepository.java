@@ -1,21 +1,23 @@
 package com.barbertime.repository;
 
 import com.barbertime.entity.Agendamento;
-import com.barbertime.entity.StatusAgendamento;
 import org.springframework.data.jpa.repository.JpaRepository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
-    
-    // Verifica se já existe agendamento para aquele barbeiro, data e hora (desconsiderando cancelados)
-    boolean existsByBarbeiroIdAndDataAndHorarioAndStatusNot(
-        Long barbeiroId, LocalDate data, LocalTime horario, StatusAgendamento status
-    );
 
-    // Busca agendamentos de um dia para mostrar o que está ocupado
-    List<Agendamento> findByBarbeiroIdAndData(Long barbeiroId, LocalDate data);
+    // Para a agenda de UM barbeiro específico
+    @Query("SELECT a FROM Agendamento a JOIN FETCH a.barbeiro WHERE a.barbeiro.id = :id AND a.data = :data")
+    List<Agendamento> findByBarbeiroIdAndData(@Param("id") Long id, @Param("data") LocalDate data);
+    
+    // Para a agenda de TODOS os barbeiros (Botão "Todos")
+    @Query("SELECT a FROM Agendamento a JOIN FETCH a.barbeiro WHERE a.data = :data")
+    List<Agendamento> findByData(@Param("data") LocalDate data);
+    
+    boolean existsByBarbeiroIdAndDataAndHorarioAndStatusNot(
+            Long barbeiroId, LocalDate data, java.time.LocalTime horario, com.barbertime.entity.StatusAgendamento status);
 }

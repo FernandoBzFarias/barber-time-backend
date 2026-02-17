@@ -43,9 +43,9 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
-		</dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
 
 		<dependency>
 			<groupId>com.mysql</groupId>
@@ -99,11 +99,7 @@
    			 <artifactId>jjwt-jackson</artifactId>
     			<version>0.11.5</version>
 		</dependency>
-		<dependency>
-			<groupId>com.example</groupId>
-			<artifactId>backend</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
+	
 		<dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-mail</artifactId>

@@ -23,6 +23,13 @@ public class SecurityConfig {
 
         http
             .csrf(csrf -> csrf.disable())
+            
+            .cors(cors -> cors.configurationSource(request -> {
+                var config = new org.springframework.web.cors.CorsConfiguration();
+                config.setAllowedOrigins(java.util.List.of("*")); // Em produção, coloque a URL do site
+                config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(java.util.List.of("*"));
+                return config;}))        
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/barbeiros/cadastro",
@@ -34,8 +41,7 @@ public class SecurityConfig {
                     "/api/barbeiros/disponibilidade"
                 ).permitAll()
                 .anyRequest().authenticated()
-                
-              
+       
             )
             .addFilterBefore(jwtFilter,
                 org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)

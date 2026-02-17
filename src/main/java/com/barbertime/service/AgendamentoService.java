@@ -1,5 +1,7 @@
 package com.barbertime.service;
 
+import com.barbertime.dto.AgendaBarbeiroResponseDTO;
+import com.barbertime.dto.AgendaGeralBarbeariaDTO;
 import com.barbertime.dto.HorarioDisponivelDTO;
 import com.barbertime.dto.NovoAgendamentoDTO;
 import com.barbertime.entity.Agendamento;
@@ -10,23 +12,24 @@ import com.barbertime.exception.BusinessException;
 import com.barbertime.repository.AgendamentoRepository;
 import com.barbertime.repository.BarbeiroRepository;
 import com.barbertime.repository.GradeHorariaRepository;
-
 import jakarta.persistence.EntityNotFoundException;
-
 import jakarta.validation.Valid;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @Service
 public class AgendamentoService {
 
@@ -125,4 +128,78 @@ public class AgendamentoService {
 
         gradeRepository.saveAll(novasGrades);
     }
+    
+    // alcula o link do WhatsApp e formata os dados.
+    @Transactional(readOnly = true)
+    public List<AgendaBarbeiroResponseDTO> buscarAgendaDashboard(LocalDate data, Long barbeiroIdFiltro) {
+        List<Agendamento> agendamentos;
+
+        // Lógica do Filtro: Se o barbeiroId for nulo, traz "Todos" (primeiro botão do seu protótipo)
+        if (barbeiroIdFiltro == null) {
+            agendamentos = agendamentoRepository.findByData(data);
+        } else {
+            agendamentos = agendamentoRepository.findByBarbeiroIdAndData(barbeiroIdFiltro, data);
+        }
+
+        return agendamentos.stream()
+            .map(a -> {
+                // Gera o link do WhatsApp com mensagem automática
+                String msg = "Olá " + a.getClienteNome() + ", aqui é da Barbearia. Confirmamos seu horário às " + a.getHorario() + "?";
+                String linkWa = "https://wa.me/55" + a.getClienteTelefone().replaceAll("\\D", "") 
+                                + "?text=" + URLEncoder.encode(msg, StandardCharsets.UTF_8);
+                
+                return new AgendaBarbeiroResponseDTO(
+                    a.getId(), 
+                    a.getHorario(), 
+                    a.getClienteNome(), 
+                    a.getClienteTelefone(),
+                    a.getServico(), // "Corte", "Barba", etc.
+                    a.getValor(), 
+                    a.getStatus().name(), 
+                    linkWa, 
+                    a.getBarbeiro().getNome()
+                );
+            })
+            .sorted(Comparator.comparing(AgendaBarbeiroResponseDTO::horario))
+            .toList();
+    }
+    
+    @Transactional
+    public void atualizarStatus(Long agendamentoId, StatusAgendamento novoStatus) {
+    	
+        // 1. Busca o agendamento no banco
+        Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
+                .orElseThrow(() -> new BusinessException("Agendamento não encontrado"));
+        
+        // 2. Segurança: Identifica quem está logado pelo Token
+        String emailLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        // 3. Bloqueia se um barbeiro tentar mexer na agenda de outro
+        if (!agendamento.getBarbeiro().getEmail().equals(emailLogado)) {
+            throw new BusinessException("Você não tem permissão para alterar este agendamento.");
+        }
+
+        // 4. Salva a alteração (isso vai mudar a cor do card no front-end)
+        agendamento.setStatus(novoStatus);
+        agendamentoRepository.save(agendamento);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<AgendaGeralBarbeariaDTO> buscarAgendaCompletaDaBarbearia(LocalDate data) {
+        // 1. Busca todos os barbeiros cadastrados
+        List<Barbeiro> barbeiros = barbeiroRepository.findAll();
+
+        // 2. Para cada barbeiro, gera a lista de agendamentos dele
+        return barbeiros.stream().map(b -> {
+            // Reutilizamos o método buscarAgendaDashboard que já criamos antes
+            List<AgendaBarbeiroResponseDTO> agendaDoBarbeiro = buscarAgendaDashboard(data, b.getId());
+            
+            return new AgendaGeralBarbeariaDTO(
+                b.getId(),
+                b.getNome(),
+                agendaDoBarbeiro
+            );
+        }).toList();
+    }
+    
 }

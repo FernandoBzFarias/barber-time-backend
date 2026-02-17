@@ -5,15 +5,22 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
+
+import com.barbertime.dto.AgendaBarbeiroResponseDTO;
+import com.barbertime.dto.AgendaGeralBarbeariaDTO;
 import com.barbertime.dto.BarbeiroRespondeDTO;
 import com.barbertime.dto.CadastroBarbeiroDTO;
 import com.barbertime.dto.HorarioDisponivelDTO;
@@ -21,6 +28,7 @@ import com.barbertime.dto.LoginBarbeiroDTO;
 import com.barbertime.dto.NovoAgendamentoDTO;
 import com.barbertime.dto.RedefinirSenhaDTO;
 import com.barbertime.dto.ResetSenhaDTO;
+import com.barbertime.entity.StatusAgendamento;
 import com.barbertime.service.AgendamentoService;
 import com.barbertime.service.BarbeiroService;
 
@@ -71,5 +79,33 @@ public class BarbeiroController {
     public ResponseEntity<String> configurarGrade(@RequestBody List<LocalTime> horarios) {
         agendamentoService.salvarGrade(horarios);
         return ResponseEntity.ok("Sua grade de horários foi atualizada com sucesso!");
+    }
+    
+    @GetMapping("/agenda-dashboard")
+    public ResponseEntity<List<AgendaBarbeiroResponseDTO>> verAgenda(
+            @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate data,
+            @RequestParam(required = false) Long barbeiroId) { 
+        
+        // Se o barbeiroId não for enviado, o Service entende que é "Todos"
+        List<AgendaBarbeiroResponseDTO> agenda = agendamentoService.buscarAgendaDashboard(data, barbeiroId);
+        return ResponseEntity.ok(agenda);
+    }
+
+    @PatchMapping("/agenda/{id}/status")
+    public ResponseEntity<Void> mudarStatus(
+            @PathVariable Long id, 
+            @RequestParam StatusAgendamento novoStatus) {
+        
+        agendamentoService.atualizarStatus(id, novoStatus);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @GetMapping("/agenda-geral")
+    public ResponseEntity<List<AgendaGeralBarbeariaDTO>> verAgendaGeral(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        
+        // Retorna os dados agrupados por Barbeiro (Ideal para colunas no Front)
+        List<AgendaGeralBarbeariaDTO> agendaGeral = agendamentoService.buscarAgendaCompletaDaBarbearia(data);
+        return ResponseEntity.ok(agendaGeral);
     }
 }

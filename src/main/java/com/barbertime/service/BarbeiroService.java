@@ -1,5 +1,6 @@
 package com.barbertime.service;
 
+
 import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,7 +24,6 @@ public class BarbeiroService {
 	  private BCryptPasswordEncoder passwordEncoder1; 
 	  @Autowired
 	  private JwtService jwtService;
-
 	  @Autowired
 	  private PasswordResetTokenRepository tokenRepository;
 	  @Autowired
@@ -96,7 +96,8 @@ public class BarbeiroService {
 
 	        barbeiro.setSenha(passwordEncoder.encode(novaSenha));
 	        repository.save(barbeiro);
+	        
 	        // Segurança: remove o token após uso
 	        tokenRepository.delete(resetToken);
-	    }
+	    }  	    
 }

@@ -34,11 +34,16 @@ public class Agendamento {
 
     @Column(nullable = false)
     private String clienteTelefone;
+    
+    private String servico;
+    
+    private Double valor;
 
     @Enumerated(EnumType.STRING)
     private StatusAgendamento status = StatusAgendamento.CONFIRMADO;
+    
 
-    @ManyToOne
+	@ManyToOne
     @JoinColumn(name = "barbeiro_id", nullable = false)
     private Barbeiro barbeiro;
 
@@ -59,5 +64,9 @@ public class Agendamento {
     public void setStatus(StatusAgendamento status) { this.status = status; }
     public Barbeiro getBarbeiro() { return barbeiro; }
     public void setBarbeiro(Barbeiro barbeiro) { this.barbeiro = barbeiro; }
+    public String getServico() {return servico;}
+  	public void setServico(String servico) {this.servico = servico;}
+  	public Double getValor() {return valor;}
+  	public void setValor(Double valor) {this.valor = valor;}
 }
 
