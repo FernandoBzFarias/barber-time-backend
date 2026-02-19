@@ -25,8 +25,19 @@ public class Barbeiro {
 
     @Column(nullable = false)
     private String telefone;
+    
+    @Column(nullable = false)
+    private Long barbeariaId;
 
-    public Barbeiro() {}
+	public Long getBarbeariaId() {
+		return barbeariaId;
+	}
+
+	public void setBarbeariaId(Long barbeariaId) {
+		this.barbeariaId = barbeariaId;
+	}
+
+	public Barbeiro() {}
 
     // Getters e Setters
     public Long getId() {

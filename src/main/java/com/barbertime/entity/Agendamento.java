@@ -35,6 +35,10 @@ public class Agendamento {
     @Column(nullable = false)
     private String clienteTelefone;
     
+    @ManyToOne
+    @JoinColumn(name = "cliente_id")
+    private Cliente cliente;
+    
     private String servico;
     
     private Double valor;
@@ -68,5 +72,7 @@ public class Agendamento {
   	public void setServico(String servico) {this.servico = servico;}
   	public Double getValor() {return valor;}
   	public void setValor(Double valor) {this.valor = valor;}
+	public Cliente getCliente() {return cliente;}
+	public void setCliente(Cliente cliente) {this.cliente = cliente;}	
 }
 

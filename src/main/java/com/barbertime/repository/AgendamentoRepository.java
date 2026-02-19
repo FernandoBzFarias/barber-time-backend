@@ -15,9 +15,12 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Agendamento> findByBarbeiroIdAndData(@Param("id") Long id, @Param("data") LocalDate data);
     
     // Para a agenda de TODOS os barbeiros (Botão "Todos")
-    @Query("SELECT a FROM Agendamento a JOIN FETCH a.barbeiro WHERE a.data = :data")
-    List<Agendamento> findByData(@Param("data") LocalDate data);
+    @Query("SELECT a FROM Agendamento a JOIN FETCH a.barbeiro b WHERE a.data = :data AND b.barbeariaId = :barbeariaId")
+    List<Agendamento> findByDataAndBarbearia(@Param("data") LocalDate data, @Param("barbeariaId") Long barbeariaId);
     
     boolean existsByBarbeiroIdAndDataAndHorarioAndStatusNot(
             Long barbeiroId, LocalDate data, java.time.LocalTime horario, com.barbertime.entity.StatusAgendamento status);
+    
+    List<Agendamento> findByClienteIdOrderByDataDesc(Long clienteId);
+    List<Agendamento> findFirst10ByClienteIdOrderByDataDesc(Long clienteId);
 }
