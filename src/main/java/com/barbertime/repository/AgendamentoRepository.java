@@ -23,4 +23,23 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     
     List<Agendamento> findByClienteIdOrderByDataDesc(Long clienteId);
     List<Agendamento> findFirst10ByClienteIdOrderByDataDesc(Long clienteId);
+    
+    @Query("SELECT a FROM Agendamento a WHERE a.barbeiro.id = :barbeiroId " +
+    	       "AND a.status = 'FINALIZADO' " +
+    	       "AND MONTH(a.data) = :mes AND YEAR(a.data) = :ano")
+    	List<Agendamento> buscarFinalizadosPorPeriodo(Long barbeiroId, int mes, int ano);
+    
+    @Query("SELECT SUM(a.valor) FROM Agendamento a " +
+    	       "WHERE a.barbeiro.barbeariaId = :barbeariaId " +
+    	       "AND a.status = 'FINALIZADO' " +
+    	       "AND a.data >= :dataInicio")
+    	Double faturamentoTotalNoPeriodo(@Param("barbeariaId") Long barbeariaId, @Param("dataInicio") LocalDate dataInicio);
+    
+    @Query("SELECT SUM(a.valor) FROM Agendamento a " +
+    	       "WHERE a.barbeiro.barbeariaId = :barbeariaId " +
+    	       "AND a.status = 'FINALIZADO' " +
+    	       "AND MONTH(a.data) = :mes AND YEAR(a.data) = :ano")
+    	Double buscarFaturamentoMensalUnidade(@Param("barbeariaId") Long barbeariaId, 
+    	                                      @Param("mes") int mes, 
+    	                                      @Param("ano") int ano);
 }

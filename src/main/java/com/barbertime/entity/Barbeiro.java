@@ -2,6 +2,8 @@ package com.barbertime.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,6 +30,38 @@ public class Barbeiro {
     
     @Column(nullable = false)
     private Long barbeariaId;
+    
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
+    
+    @Column(nullable = false)
+    private Double percentualComissao = 50.0;
+    
+    private String senhaFinanceira;
+ 
+	public Double getPercentualComissao() {
+		return percentualComissao;
+	}
+
+	public void setPercentualComissao(Double percentualComissao) {
+		this.percentualComissao = percentualComissao;
+	}
+
+	public String getSenhaFinanceira() {
+		return senhaFinanceira;
+	}
+
+	public void setSenhaFinanceira(String senhaFinanceira) {
+		this.senhaFinanceira = senhaFinanceira;
+	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public void setRole(Role role) {
+		this.role = role;
+	}
 
 	public Long getBarbeariaId() {
 		return barbeariaId;
