@@ -21,6 +21,8 @@ public class FinanceiroService {
     private AgendamentoRepository agendamentoRepository;
     @Autowired
     private BarbeiroRepository barbeiroRepository;
+    @Autowired
+    private DespesaService despesaService;
 
     public FinanceiroResumoDTO calcularFechamentoMensal(Long barbeariaId, int mes, int ano) {
         // 1. Busca todos os barbeiros da unidade
@@ -47,9 +49,11 @@ public class FinanceiroService {
             ));
         }
 
-        // 3. Lucro Líquido (Faturamento - Comissões)
-        double lucroLiquido = faturamentoTotalUnidade - totalComissoesUnidade;
-
+        // 3. Lucro Líquido (Faturamento - Comissões)  
+        Double totalDespesas = despesaService.calcularTotalMes(barbeariaId, mes, ano);
+        double lucroLiquido = faturamentoTotalUnidade - totalComissoesUnidade - totalDespesas;
+        
+        
         // 4. Busca os dados do gráfico e calcula a variação vs mês anterior
         List<EvolucaoMensalDTO> grafico = buscarEvolucao6Meses(barbeariaId);
         Double variacao = calcularVariacaoPercentual(barbeariaId, mes, ano); // <--- Lógica real aplicada aqui
