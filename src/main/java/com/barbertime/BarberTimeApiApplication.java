@@ -6,9 +6,13 @@ import jakarta.annotation.PostConstruct;
 
 @SpringBootApplication
 public class BarberTimeApiApplication {
-	 @PostConstruct
-	    void started() {
-	        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));}
-	public static void main(String[] args) {
-		SpringApplication.run(BarberTimeApiApplication.class, args);}
+	
+	@PostConstruct
+    void started() {    
+        TimeZone.setDefault(TimeZone.getTimeZone("America/Fortaleza"));
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(BarberTimeApiApplication.class, args);
+    }
 }

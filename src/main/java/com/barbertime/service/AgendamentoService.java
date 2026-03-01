@@ -4,6 +4,7 @@ import com.barbertime.dto.AgendaBarbeiroResponseDTO;
 import com.barbertime.dto.AgendaGeralBarbeariaDTO;
 import com.barbertime.dto.HorarioDisponivelDTO;
 import com.barbertime.dto.NovoAgendamentoDTO;
+import com.barbertime.dto.ResumoDiarioDTO;
 import com.barbertime.entity.Agendamento;
 import com.barbertime.entity.Barbeiro;
 import com.barbertime.entity.Cliente;
@@ -241,6 +242,26 @@ public class AgendamentoService {
             List<AgendaBarbeiroResponseDTO> agendaDoBarbeiro = buscarAgendaDashboard(data, b.getId());
             return new AgendaGeralBarbeariaDTO(b.getId(), b.getNome(), agendaDoBarbeiro);
         }).toList();
+    }
+    
+    public ResumoDiarioDTO obterResumoDiario(Long barbeiroId, LocalDate data) {
+        // 🔴 Use o nome correto do seu repositório (ex: agendamentoRepository)
+        // Se o seu repositório for 'repository', verifique se ele foi declarado no topo da classe
+        List<Agendamento> agendamentos = agendamentoRepository.findByBarbeiroIdAndData(barbeiroId, data);
+        
+        var listaAtiva = agendamentos.stream()
+            .filter(a -> !a.getStatus().equals(StatusAgendamento.CANCELADO))
+            .toList();
+
+        Integer total = listaAtiva.size();
+        Double faturamento = listaAtiva.stream()
+            .mapToDouble(a -> a.getValor() != null ? a.getValor() : 0.0)
+            .sum();
+        
+        String primeiro = listaAtiva.isEmpty() ? "--:--" : listaAtiva.get(0).getHorario().toString();
+        String ultimo = listaAtiva.isEmpty() ? "--:--" : listaAtiva.get(listaAtiva.size() - 1).getHorario().toString();
+
+        return new ResumoDiarioDTO(total, faturamento, primeiro, ultimo);
     }
     
 }

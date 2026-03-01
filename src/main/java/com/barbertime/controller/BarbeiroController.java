@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,19 +29,32 @@ import com.barbertime.dto.LoginBarbeiroDTO;
 import com.barbertime.dto.NovoAgendamentoDTO;
 import com.barbertime.dto.RedefinirSenhaDTO;
 import com.barbertime.dto.ResetSenhaDTO;
+import com.barbertime.dto.ResumoDiarioDTO;
+import com.barbertime.entity.Servico;
 import com.barbertime.entity.StatusAgendamento;
 import com.barbertime.service.AgendamentoService;
 import com.barbertime.service.BarbeiroService;
 
 @RestController
 @RequestMapping("/api/barbeiros")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class BarbeiroController {
 	@Autowired
     private BarbeiroService service;
 	
 	@Autowired
     private AgendamentoService agendamentoService;
+	
+	@Autowired
+    private com.barbertime.service.ServicoService servicoService;
+	
+	@Autowired
+    private com.barbertime.repository.BarbeiroRepository barbeiroRepository;
+	
+	@GetMapping("/publico/servicos/{barbeariaId}")
+    public ResponseEntity<List<Servico>> listarServicosPublicos(@PathVariable Long barbeariaId) {
+        return ResponseEntity.ok(servicoService.listarPorBarbearia(barbeariaId));
+    }
 	  
     @PostMapping("/cadastro")
     public ResponseEntity<BarbeiroRespondeDTO> cadastrar(@Valid @RequestBody CadastroBarbeiroDTO dto) {
@@ -65,9 +79,10 @@ public class BarbeiroController {
     @PostMapping
     public ResponseEntity<String> agendar(@RequestBody NovoAgendamentoDTO dto) {
         String mensagem = agendamentoService.criarAgendamento(dto);
-           return ResponseEntity.ok(mensagem);
-        }
+        return ResponseEntity.ok(mensagem);
+    }
     
+    // Rota de disponibilidade (Já é pública no seu SecurityConfig)
     @GetMapping("/disponibilidade")
     public ResponseEntity<List<HorarioDisponivelDTO>> consultar(
             @RequestParam Long barbeiroId, 
@@ -107,5 +122,15 @@ public class BarbeiroController {
         // Retorna os dados agrupados por Barbeiro (Ideal para colunas no Front)
         List<AgendaGeralBarbeariaDTO> agendaGeral = agendamentoService.buscarAgendaCompletaDaBarbearia(data);
         return ResponseEntity.ok(agendaGeral);
+    }
+    
+    @GetMapping("/resumo-dia")
+    public ResponseEntity<ResumoDiarioDTO> verResumoDiario(
+            @RequestParam @DateTimeFormat(iso = ISO.DATE) LocalDate data) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        com.barbertime.entity.Barbeiro logado = barbeiroRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado"));
+
+        return ResponseEntity.ok(agendamentoService.obterResumoDiario(logado.getId(), data));
     }
 }
