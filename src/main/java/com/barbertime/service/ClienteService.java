@@ -105,16 +105,5 @@ public class ClienteService {
             0, 
             salvo.getModalidade().name()
         );
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    }      
 }

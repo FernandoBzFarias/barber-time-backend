@@ -8,12 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +25,7 @@ import jakarta.validation.Valid;
 
 import com.barbertime.dto.AgendaBarbeiroResponseDTO;
 import com.barbertime.dto.AgendaGeralBarbeariaDTO;
+import com.barbertime.dto.BarbeiroConfigDTO;
 import com.barbertime.dto.BarbeiroRespondeDTO;
 import com.barbertime.dto.CadastroBarbeiroDTO;
 import com.barbertime.dto.HorarioDisponivelDTO;
@@ -30,6 +34,7 @@ import com.barbertime.dto.NovoAgendamentoDTO;
 import com.barbertime.dto.RedefinirSenhaDTO;
 import com.barbertime.dto.ResetSenhaDTO;
 import com.barbertime.dto.ResumoDiarioDTO;
+import com.barbertime.entity.Barbeiro;
 import com.barbertime.entity.Servico;
 import com.barbertime.entity.StatusAgendamento;
 import com.barbertime.service.AgendamentoService;
@@ -132,5 +137,49 @@ public class BarbeiroController {
                 .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado"));
 
         return ResponseEntity.ok(agendamentoService.obterResumoDiario(logado.getId(), data));
+    }
+    
+    @PutMapping("/perfil")
+    public ResponseEntity<?> atualizarMeusDados(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody BarbeiroConfigDTO dto) {
+        try {
+            service.atualizarPerfil(userDetails.getUsername(), dto);
+            return ResponseEntity.ok("Perfil atualizado com sucesso!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    @PatchMapping("/device-token")
+    public ResponseEntity<String> atualizarToken(@RequestBody String token) {
+        // Pega o email do barbeiro logado pelo Token JWT
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        
+        // Aqui usamos o nome correto: barbeiroRepository (em vez de repository)
+        Barbeiro barbeiro = barbeiroRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado"));
+        
+        // Limpeza simples caso o token venha com aspas do JSON
+        String tokenLimpo = token.replace("\"", "");
+        
+        barbeiro.setDeviceToken(tokenLimpo);
+        barbeiroRepository.save(barbeiro);
+        
+        return ResponseEntity.ok("Token registrado com sucesso!");
+    }
+    
+    @PostMapping("/validar-acesso-financeiro")
+    public ResponseEntity<?> validarAcesso(@RequestBody String pin) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Barbeiro barbeiro = barbeiroRepository.findByEmail(email).orElseThrow();
+        
+        String pinLimpo = pin.replace("\"", "");
+        
+        if (barbeiro.getSenhaFinanceira() != null && barbeiro.getSenhaFinanceira().equals(pinLimpo)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(403).body("PIN Financeiro incorreto");
+        }
     }
 }

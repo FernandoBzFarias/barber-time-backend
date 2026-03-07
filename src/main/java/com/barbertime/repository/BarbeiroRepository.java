@@ -7,6 +7,7 @@ import com.barbertime.entity.Barbeiro;
 
 public interface BarbeiroRepository extends JpaRepository<Barbeiro, Long>{
 	   Optional<Barbeiro> findByEmail(String email);
-	   List<Barbeiro> findByBarbeariaId(Long barbeariaId); }
+	   List<Barbeiro> findByBarbeariaId(Long barbeariaId); 
+	   Optional<Barbeiro> findBySlug(String slug);}
 
 

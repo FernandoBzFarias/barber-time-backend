@@ -1,6 +1,9 @@
 package com.barbertime.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -38,9 +41,61 @@ public class Barbeiro {
     private Double percentualComissao = 50.0;
     
     private String senhaFinanceira;
- 
+    
+    private boolean notificarAgendamentos = true;
+    private boolean notificarLembretes = true;
+    private boolean notificarCancelamentos = true;
+    
+    private String deviceToken;
+    
+    @Column(unique = true)
+    private String slug; // Ex: "barbearia-do-rafael"
+
+    @ElementCollection
+    private List<String> servicos;
+    
+	public List<String> getServicos() {
+		return servicos;
+	}
+
+	public void setServicos(List<String> servicos) {
+		this.servicos = servicos;
+	}
+
+	public String getSlug() {
+		return slug;
+	}
+
+	public void setSlug(String slug) {
+		this.slug = slug;
+	}
+
 	public Double getPercentualComissao() {
 		return percentualComissao;
+	}
+
+	public boolean isNotificarAgendamentos() {
+		return notificarAgendamentos;
+	}
+
+	public void setNotificarAgendamentos(boolean notificarAgendamentos) {
+		this.notificarAgendamentos = notificarAgendamentos;
+	}
+
+	public boolean isNotificarLembretes() {
+		return notificarLembretes;
+	}
+
+	public void setNotificarLembretes(boolean notificarLembretes) {
+		this.notificarLembretes = notificarLembretes;
+	}
+
+	public boolean isNotificarCancelamentos() {
+		return notificarCancelamentos;
+	}
+
+	public void setNotificarCancelamentos(boolean notificarCancelamentos) {
+		this.notificarCancelamentos = notificarCancelamentos;
 	}
 
 	public void setPercentualComissao(Double percentualComissao) {
@@ -103,4 +158,7 @@ public class Barbeiro {
     
     public void setTelefone(String telefone) {
         this.telefone = telefone;}
+    
+    public String getDeviceToken() { return deviceToken; }
+    public void setDeviceToken(String deviceToken) { this.deviceToken = deviceToken; }
 }

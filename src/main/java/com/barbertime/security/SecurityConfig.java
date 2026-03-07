@@ -35,7 +35,8 @@ public class SecurityConfig {
                     "/api/barbeiros/redefinir-senha",
                     "/api/barbeiros/disponibilidade",
                     "/api/barbeiros",      
-                    "/api/barbeiros/publico/**" 
+                    "/api/barbeiros/publico/**" ,
+                    "/uploads/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

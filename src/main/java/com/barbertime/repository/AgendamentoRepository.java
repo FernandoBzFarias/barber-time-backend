@@ -1,11 +1,14 @@
 package com.barbertime.repository;
 
 import com.barbertime.entity.Agendamento;
+import com.barbertime.entity.StatusAgendamento;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
@@ -42,4 +45,21 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     	Double buscarFaturamentoMensalUnidade(@Param("barbeariaId") Long barbeariaId, 
     	                                      @Param("mes") int mes, 
     	                                      @Param("ano") int ano);
+    List<Agendamento> findByDataAndHorarioAndStatus(LocalDate data, LocalTime horario, StatusAgendamento status);
+    
+
+    List<Agendamento> findByBarbeiroBarbeariaIdAndStatus(Long barbeariaId, StatusAgendamento status);
+   
+    // Busca agenda da barbearia inteira
+    List<Agendamento> findByDataAndBarbeiroBarbeariaId(LocalDate data, Long barbeariaId);
+    
+ 
+    long countByClienteIdAndStatus(Long clienteId, StatusAgendamento status);
+
+    List<Agendamento> findByBarbeiroIdAndDataAndStatus(Long barbeiroId, LocalDate data, StatusAgendamento status);
+
+    // Para o Card "Clientes Hoje"
+    long countByBarbeiroIdAndData(Long barbeiroId, LocalDate data);
+   
 }
+

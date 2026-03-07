@@ -2,8 +2,11 @@ package com.barbertime.service;
 
 import com.barbertime.dto.AgendaBarbeiroResponseDTO;
 import com.barbertime.dto.AgendaGeralBarbeariaDTO;
+import com.barbertime.dto.DashboardHomeDTO;
 import com.barbertime.dto.HorarioDisponivelDTO;
+import com.barbertime.dto.MarketingDTO;
 import com.barbertime.dto.NovoAgendamentoDTO;
+import com.barbertime.dto.RelatorioCompletoDTO;
 import com.barbertime.dto.ResumoDiarioDTO;
 import com.barbertime.entity.Agendamento;
 import com.barbertime.entity.Barbeiro;
@@ -29,6 +32,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map; // Resolve o erro: Map cannot be resolved
+import com.barbertime.dto.FaturamentoMensalDTO;
+
+
 
 @Slf4j
 @Service
@@ -42,6 +49,9 @@ public class AgendamentoService {
     private GradeHorariaRepository gradeRepository;
     @Autowired
     private ClienteRepository clienteRepository;
+       
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional(isolation = Isolation.SERIALIZABLE) 
     public String criarAgendamento(@Valid NovoAgendamentoDTO dto) {
@@ -91,6 +101,14 @@ public class AgendamentoService {
             agendamento.setStatus(StatusAgendamento.CONFIRMADO);
             agendamento.setCliente(cliente); 
 
+            if (barbeiro.isNotificarAgendamentos() && barbeiro.getDeviceToken() != null) {
+                notificationService.enviarPush(
+                    barbeiro.getDeviceToken(), 
+                    "Novo Agendamento! ✂️", 
+                    "O cliente " + dto.getClienteNome() + " agendou para às " + dto.getHorario()
+                );
+            }
+            
             agendamentoRepository.save(agendamento);
             return "Agendamento realizado com sucesso!";     
 
@@ -198,6 +216,18 @@ public class AgendamentoService {
         if (statusAntigo == novoStatus) return; // Se não mudou nada, não faz nada.
 
         agendamento.setStatus(novoStatus);
+        
+        if (novoStatus == StatusAgendamento.CANCELADO) {
+            Barbeiro barbeiro = agendamento.getBarbeiro();
+            if (barbeiro.isNotificarCancelamentos() && barbeiro.getDeviceToken() != null) {
+                notificationService.enviarPush(
+                    barbeiro.getDeviceToken(),
+                    "Agendamento Cancelado ⚠️",
+                    "O horário das " + agendamento.getHorario() + " foi cancelado."
+                );
+            }
+        }
+        
         Cliente cliente = agendamento.getCliente();
 
         if (cliente != null) {
@@ -263,5 +293,123 @@ public class AgendamentoService {
 
         return new ResumoDiarioDTO(total, faturamento, primeiro, ultimo);
     }
+    @Transactional(readOnly = true)
+    public RelatorioCompletoDTO obterRelatorioGeral(Long barbeariaId) {
+        // 1. Busca todos os agendamentos finalizados da barbearia
+        List<Agendamento> finalizados = agendamentoRepository
+                .findByBarbeiroBarbeariaIdAndStatus(barbeariaId, StatusAgendamento.FINALIZADO);
+
+        // 2. Cálculos básicos
+        long total = finalizados.size();
+        double faturamentoTotal = finalizados.stream()
+                .mapToDouble(a -> a.getValor() != null ? a.getValor() : 0.0)
+                .sum();
+        
+        double ticketMedio = total > 0 ? faturamentoTotal / total : 0.0;
+
+        // --- MELHORIA: Faturamento Mensal Dinâmico ---
+        // Agrupa por Mês (Ex: "JANUARY", "FEBRUARY") e soma os valores
+        Map<String, Double> faturamentoPorMes = finalizados.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        a -> a.getData().getMonth().name(),
+                        java.util.stream.Collectors.summingDouble(a -> a.getValor() != null ? a.getValor() : 0.0)
+                ));
+
+        List<FaturamentoMensalDTO> faturamentoMensal = faturamentoPorMes.entrySet().stream()
+                .map(entry -> new FaturamentoMensalDTO(entry.getKey(), entry.getValue()))
+                .toList();
+
+        // --- MELHORIA: Distribuição de Serviços (Gráfico de Pizza) ---
+        Map<String, Double> servicosMaisRealizados = finalizados.stream()
+                .filter(a -> a.getServico() != null)
+                .collect(java.util.stream.Collectors.groupingBy(
+                        Agendamento::getServico,
+                        java.util.stream.Collectors.counting()
+                ))
+                .entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> (e.getValue().doubleValue() / total) * 100
+                ));
+
+        // 3. Lógica para Taxa de Retorno
+        long clientesRecorrentes = finalizados.stream()
+                .map(a -> a.getCliente().getId())
+                .distinct()
+                .filter(id -> agendamentoRepository.countByClienteIdAndStatus(id, StatusAgendamento.FINALIZADO) > 1)
+                .count();
+        
+        double taxaRetorno = total > 0 ? (double) clientesRecorrentes / total * 100 : 0.0;
+
+        // O valor 18.0 (crescimento) pode ser calculado comparando com o mês anterior futuramente
+        return new RelatorioCompletoDTO(
+            total, 
+            ticketMedio, 
+            taxaRetorno, 
+            18.0, 
+            faturamentoMensal, 
+            servicosMaisRealizados
+        );
+    }
     
+    @Transactional(readOnly = true)
+    public MarketingDTO obterDadosMarketing() {
+        // 1. Pega o e-mail do barbeiro logado através do Token JWT
+        String emailLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 2. Busca os dados do barbeiro/barbearia
+        Barbeiro barbeiro = barbeiroRepository.findByEmail(emailLogado)
+                .orElseThrow(() -> new EntityNotFoundException("Barbeiro não encontrado"));
+
+        // 3. Define a URL base (Em produção, isso viria do application.properties)
+        String baseUrl = "https://barbertime.com/"; 
+        
+        // Se o slug for nulo, usamos um fallback baseado no nome para não quebrar a tela
+        String slug = (barbeiro.getSlug() != null) ? barbeiro.getSlug() : "unidade-" + barbeiro.getBarbeariaId();
+        String linkCompleto = baseUrl + slug;
+
+        return new MarketingDTO(
+            linkCompleto, 
+            slug, 
+            barbeiro.getNome()
+        );
+    }
+    @Transactional(readOnly = true)
+    public DashboardHomeDTO obterDashboardPrincipal() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Barbeiro barbeiro = barbeiroRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("Barbeiro não encontrado"));
+
+        LocalDate hoje = LocalDate.now();
+        LocalTime agora = LocalTime.now();
+
+        // Busca todos os agendamentos confirmados de hoje para este barbeiro
+        List<Agendamento> agendaHoje = agendamentoRepository
+                .findByBarbeiroIdAndDataAndStatus(barbeiro.getId(), hoje, StatusAgendamento.CONFIRMADO)
+                .stream()
+                .sorted(java.util.Comparator.comparing(Agendamento::getHorario))
+                .toList();
+
+        // 1. Corte Atual: O agendamento mais próximo que ainda não passou muito tempo
+        // (Ex: se o corte dura 30min, ele ainda é o atual até 30min depois do início)
+        Agendamento atual = agendaHoje.stream()
+                .filter(a -> !a.getHorario().isAfter(agora))
+                .reduce((first, second) -> second) // Pega o último que já começou
+                .orElse(null);
+
+        // 2. Próximo Corte: O primeiro agendamento que é depois de "agora"
+        Agendamento proximo = agendaHoje.stream()
+                .filter(a -> a.getHorario().isAfter(agora))
+                .findFirst()
+                .orElse(null);
+
+        // 3. Total de Clientes hoje (Finalizados + Confirmados)
+        long totalHoje = agendamentoRepository.countByBarbeiroIdAndData(barbeiro.getId(), hoje);
+
+        return new DashboardHomeDTO(
+            atual != null ? new DashboardHomeDTO.CorteInfoDTO(atual.getClienteNome(), atual.getServico(), atual.getHorario().toString()) : null,
+            proximo != null ? new DashboardHomeDTO.CorteInfoDTO(proximo.getClienteNome(), proximo.getServico(), proximo.getHorario().toString()) : null,
+            totalHoje
+        );
+    }
 }
